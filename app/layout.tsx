@@ -30,7 +30,7 @@ function Footer() {
           <a href="https://wireach.tools/privacy" className="font-dmsans text-sm text-stone-500 inline-flex items-center min-h-[44px] px-1">Privacy</a>
           <a href="https://wireach.tools/terms" className="font-dmsans text-sm text-stone-500 inline-flex items-center min-h-[44px] px-1">Terms</a>
           <a href="mailto:support@wireach.tools" className="font-dmsans text-sm text-stone-500 inline-flex items-center min-h-[44px] px-1">Support</a>
-          <a href="https://wireach.tools" className="wri-suite-link font-dmsans text-sm text-stone-400 inline-flex items-center min-h-[44px] px-1 transition-colors">Part of WRI Suite →</a>
+          <a href="https://wireach.tools" className="wri-suite-link font-dmsans text-sm text-stone-400 inline-flex items-center min-h-[44px] px-1 transition-colors">Part of the wireach.tools suite →</a>
         </div>
       </div>
       <p className="mt-4 font-dmsans text-xs text-stone-500">
