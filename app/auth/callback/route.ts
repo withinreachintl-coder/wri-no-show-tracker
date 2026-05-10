@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { sendWelcomeEmail } from '../../../lib/welcome'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
@@ -95,6 +96,14 @@ export async function GET(request: Request) {
 
     if (userError) {
       console.error('[auth/callback] User upsert failed:', userError?.message)
+    }
+
+    // Welcome email (non-blocking, errors logged but don't break flow)
+    if (user.email) {
+      const orgName = user.email.split('@')[0] || 'My Business'
+      sendWelcomeEmail(user.email, orgName).catch((e) =>
+        console.error('[auth/callback] welcome email failed:', e)
+      )
     }
 
     const redirectTo = next.startsWith('/') ? next : '/dashboard'
