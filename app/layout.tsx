@@ -15,8 +15,8 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'No-Show Tracker — WRI',
-  description: 'Track restaurant staff no-shows, lates, and walk-offs. Within Reach Tools.',
+  title: 'No-Show Tracker',
+  description: 'Track restaurant staff no-shows, lates, and walk-offs in one tap.',
 }
 
 function Footer() {
