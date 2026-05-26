@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getUserContext } from '../../../lib/supabase-server'
-import { canLogIncident } from '../../../lib/entitlements'
 
 type RawIncident = {
   id: string
@@ -62,19 +61,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid type' }, { status: 400 })
   }
 
-  const gate = await canLogIncident(ctx.profile.org_id)
-  if (!gate.ok) {
-    return NextResponse.json(
-      {
-        error: 'free_tier_limit',
-        used: gate.used,
-        limit: gate.limit,
-        upgradeUrl: gate.upgradeUrl,
-      },
-      { status: 402 }
-    )
-  }
-
+  // SPEC-0026: incident logging is uncapped for all tiers (10-incident cap retired;
+  // the 5-worker cap replaces it).
   const { data, error } = await ctx.supabase
     .from('incidents')
     .insert({
@@ -88,10 +76,5 @@ export async function POST(request: Request) {
     .select('id, worker_id, incident_date, type, note, created_at')
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({
-    incident: data,
-    used: gate.used + 1,
-    limit: gate.limit,
-    tier: gate.tier,
-  })
+  return NextResponse.json({ incident: data })
 }

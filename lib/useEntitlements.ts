@@ -12,17 +12,12 @@
  * this same return object. Do NOT rename the hook or restructure `limits` — unlocks
  * unions in later.
  *
- * NOTE: the cap value below is a runtime mirror of `entitlements.FREE_LIMITS`. It cannot
- * be value-imported from lib/entitlements.ts because that module's graph pulls
- * `getAdminClient -> next/headers`, which is server-only and breaks a client bundle.
- * The TYPE is imported from there (erased at build); the single source reconciles when
- * SPEC-0015 Phase 5 moves the cap map into the shared @wri/entitlements package.
+ * Cap map is imported from the client-safe single source lib/limits.ts (NOT from
+ * lib/entitlements.ts, whose graph pulls server-only next/headers).
  */
 import { useEffect, useState } from 'react'
 import { createClient } from './supabase'
-import type { FreeLimits } from './entitlements'
-
-const FREE_LIMITS: FreeLimits = { workers: 5 }
+import { FREE_LIMITS, type FreeLimits } from './limits'
 
 export function useEntitlements(): { limits: FreeLimits | null; loading: boolean } {
   const [limits, setLimits] = useState<FreeLimits | null>(null)

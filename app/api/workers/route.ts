@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getUserContext } from '../../../lib/supabase-server'
+import { getOrgLimits, isOverFreeLimit, FREE_LIMITS } from '../../../lib/entitlements'
 
 export async function GET() {
   const ctx = await getUserContext()
@@ -10,7 +11,13 @@ export async function GET() {
     .order('active', { ascending: false })
     .order('name')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ workers: data ?? [] })
+
+  // Server-authoritative cap state for the client lock/CTA (no client tier read).
+  const limitMap = await getOrgLimits(ctx.profile.org_id)
+  const limit = limitMap?.workers ?? null
+  const atLimit = await isOverFreeLimit(ctx.profile.org_id, 'workers')
+
+  return NextResponse.json({ workers: data ?? [], limit, atLimit })
 }
 
 export async function POST(request: Request) {
@@ -21,6 +28,15 @@ export async function POST(request: Request) {
   if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
   const role =
     typeof body?.role === 'string' && body.role.trim().length > 0 ? body.role.trim() : null
+
+  // SPEC-0026 server gate (authoritative). Paid orgs pass (gate returns false).
+  if (await isOverFreeLimit(ctx.profile.org_id, 'workers')) {
+    return NextResponse.json(
+      { error: 'free_limit_reached', resource: 'workers', limit: FREE_LIMITS.workers },
+      { status: 403 }
+    )
+  }
+
   const { data, error } = await ctx.supabase
     .from('workers')
     .insert({ org_id: ctx.profile.org_id, name, role })
