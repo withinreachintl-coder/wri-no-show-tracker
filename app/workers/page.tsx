@@ -86,11 +86,20 @@ export default function WorkersPage() {
   }
 
   async function toggleActive(w: Worker) {
-    await fetch(`/api/workers/${w.id}`, {
+    const r = await fetch(`/api/workers/${w.id}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ active: !w.active }),
     })
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}))
+      // SPEC-0026: PATCH reactivation can hit the worker cap. Mirror the addWorker
+      // backstop — surface the lock state instead of a silent failure.
+      if (r.status === 403 && j.error === 'free_limit_reached') {
+        setAtLimit(true)
+        if (typeof j.limit === 'number') setLimit(j.limit)
+      }
+    }
     await refresh()
   }
 
