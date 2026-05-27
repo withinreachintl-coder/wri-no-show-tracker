@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
 
+type Worker = { id: string; active: boolean }
+
 export default function BillingPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [tier, setTier] = useState<'free' | 'paid'>('free')
-  const [used, setUsed] = useState(0)
+  const [activeWorkers, setActiveWorkers] = useState(0)
+  const [workerLimit, setWorkerLimit] = useState<number | null>(null)
   const [orgId, setOrgId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -38,9 +41,15 @@ export default function BillingPage() {
           .single()
         setTier(org?.subscription_tier === 'paid' ? 'paid' : 'free')
       }
-      const r = await fetch('/api/incidents?start=1970-01-01')
+      // SPEC-0026: usage line shows active workers vs the free-tier cap (the
+      // 10-incident cap is retired). Reuses the same server-authoritative shape
+      // GET /api/workers returns to the /workers page — no separate counter API.
+      const r = await fetch('/api/workers')
       const data = await r.json()
-      setUsed((data.incidents || []).length)
+      const list: Worker[] = data.workers || []
+      if (cancelled) return
+      setActiveWorkers(list.filter((w) => w.active).length)
+      setWorkerLimit(typeof data.limit === 'number' ? data.limit : null)
       setLoading(false)
     })()
     return () => {
@@ -82,15 +91,15 @@ export default function BillingPage() {
           </div>
           <p className="font-dmsans text-sm text-stone-900">
             {tier === 'paid'
-              ? 'Unlimited incidents. Cancel anytime from your Stripe receipt.'
-              : `${used} / 10 free incidents used.`}
+              ? 'Unlimited workers. Cancel anytime from your Stripe receipt.'
+              : `${activeWorkers} / ${workerLimit ?? 5} workers tracked. Incident history is unlimited on every worker.`}
           </p>
         </div>
 
         {tier === 'free' && (
           <div className="bg-amber-600 rounded-lg p-6">
             <div className="font-playfair text-2xl font-bold text-stone-900 mb-2">
-              Upgrade to unlimited
+              Upgrade to track your whole roster
             </div>
             <div className="font-dmsans text-base text-stone-900 mb-4">
               $19 / month · 14-day free trial · cancel anytime

@@ -37,9 +37,10 @@ Before activating auth in any environment:
 4. Set Site URL to `https://tracker.wireach.tools`
 
 ### Entitlements gate
-Single source of truth: `lib/entitlements.ts` → `canLogIncident(orgId)`.
-Free tier = 10 lifetime incidents. Paid tier = unlimited.
-Free signups must NOT auto-grant paid status. Verify on a clean account before ship.
+Single source of truth: `lib/entitlements.ts` → `isOverFreeLimit(orgId, resource)` (SPEC-0026 canonical public gate). Cap map lives in `lib/limits.ts` (`FREE_LIMITS = { workers: 5 }`).
+Free tier = 5 active workers (incident history is uncapped on every worker). Paid tier = unlimited workers.
+Tier read: `organizations.subscription_tier` (paid → exempt). Free signups must NOT auto-grant paid status. Verify on a clean account before ship.
+Forward seam: `lib/useEntitlements.ts` returns `{ limits, loading }`, currently UNCONSUMED — reserved for the SPEC-0015 Phase 5 unlocks union; do NOT wire to UI without first verifying browser-client RLS on `organizations.subscription_tier`.
 
 ### Stripe
 Single price: $19/mo, 14-day trial. `client_reference_id = org_id`.

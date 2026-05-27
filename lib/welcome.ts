@@ -15,7 +15,7 @@ export async function sendWelcomeEmail(to: string, orgName: string) {
       subject: 'Welcome to No-Show Tracker',
       text:
         `Welcome to No-Show Tracker.\n\n` +
-        `You're set up under "${orgName}". Free tier includes 10 incidents.\n\n` +
+        `You're set up under "${orgName}". Free tier tracks 5 workers; incident history is unlimited.\n\n` +
         `Log your first one: https://tracker.wireach.tools/log\n` +
         `Manage workers: https://tracker.wireach.tools/workers\n\n` +
         `Reply if you need help.\n\n— Within Reach`,

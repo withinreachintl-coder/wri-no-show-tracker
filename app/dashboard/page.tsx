@@ -19,12 +19,15 @@ const TYPE_LABEL: Record<string, string> = {
   left_early: 'Left early',
 }
 
+type WorkerSummary = { id: string; active: boolean }
+
 export default function Dashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [orgName, setOrgName] = useState('')
-  const [used, setUsed] = useState(0)
+  const [activeWorkers, setActiveWorkers] = useState(0)
+  const [workerLimit, setWorkerLimit] = useState<number | null>(null)
   const [tier, setTier] = useState<'free' | 'paid'>('free')
 
   useEffect(() => {
@@ -54,12 +57,20 @@ export default function Dashboard() {
         setOrgName(org?.name || 'My Business')
         setTier(org?.subscription_tier === 'paid' ? 'paid' : 'free')
       }
-      const r = await fetch('/api/incidents?start=1970-01-01')
-      const data = await r.json()
+      // SPEC-0026: header usage line shows active workers vs the free-tier cap
+      // (incidents are no longer capped). Incidents fetch stays for the Recent list.
+      const [incRes, wkRes] = await Promise.all([
+        fetch('/api/incidents?start=1970-01-01'),
+        fetch('/api/workers'),
+      ])
+      const incData = await incRes.json()
+      const wkData = await wkRes.json()
       if (cancelled) return
-      const all: Incident[] = data.incidents || []
+      const all: Incident[] = incData.incidents || []
       setIncidents(all.slice(0, 5))
-      setUsed(all.length)
+      const workers: WorkerSummary[] = wkData.workers || []
+      setActiveWorkers(workers.filter((w) => w.active).length)
+      setWorkerLimit(typeof wkData.limit === 'number' ? wkData.limit : null)
       setLoading(false)
     }
     load()
@@ -83,7 +94,9 @@ export default function Dashboard() {
           <div>
             <h1 className="font-playfair text-3xl font-bold text-stone-100">{orgName}</h1>
             <p className="font-dmsans text-sm text-stone-400">
-              {tier === 'paid' ? 'Paid plan · unlimited' : `Free plan · ${used} / 10 logged`}
+              {tier === 'paid'
+                ? 'Paid plan · unlimited'
+                : `Free plan · ${activeWorkers} / ${workerLimit ?? 5} workers`}
             </p>
           </div>
           <a
