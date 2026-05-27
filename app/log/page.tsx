@@ -24,7 +24,6 @@ export default function LogPage() {
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [upgradeUrl, setUpgradeUrl] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -52,7 +51,6 @@ export default function LogPage() {
     if (!worker || !type) return
     setSaving(true)
     setError('')
-    setUpgradeUrl(null)
     const r = await fetch('/api/incidents', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -63,13 +61,6 @@ export default function LogPage() {
         note: note.trim() || undefined,
       }),
     })
-    if (r.status === 402) {
-      const j = await r.json().catch(() => ({}))
-      setError(`You've used all ${j.limit} free incidents. Upgrade to keep logging.`)
-      setUpgradeUrl(j.upgradeUrl || '/billing')
-      setSaving(false)
-      return
-    }
     if (!r.ok) {
       const j = await r.json().catch(() => ({}))
       setError(j.error || 'Failed to save')
@@ -205,14 +196,7 @@ export default function LogPage() {
             />
 
             {error && (
-              <p className="font-dmsans text-sm text-red-400 mt-4">
-                {error}{' '}
-                {upgradeUrl && (
-                  <a href={upgradeUrl} className="text-amber-600 underline">
-                    Upgrade →
-                  </a>
-                )}
-              </p>
+              <p className="font-dmsans text-sm text-red-400 mt-4">{error}</p>
             )}
 
             <button
